@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>World Capitals Quiz</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:system-ui,-apple-system,sans-serif;font-size:14px;color:#1a1a1a;background:#fafafa;min-height:100vh;padding:16px}
+#app{max-width:620px;margin:0 auto}
+.card{background:white;border:1px solid #e5e5e5;border-radius:12px;padding:1rem 1.25rem}
+.btn{background:white;border:1px solid #ccc;border-radius:8px;padding:8px 18px;cursor:pointer;font-size:14px;color:#1a1a1a;font-weight:500;font-family:inherit}
+.btn:hover{background:#f5f5f5}.btn:active{transform:scale(0.98)}
+.pbtn{background:#1a1a1a;color:white;border-color:transparent}.pbtn:hover{background:#333}
+.lbl{font-size:11px;font-weight:500;letter-spacing:1px;text-transform:uppercase;color:#888}
+.ok{color:#16a34a}.no{color:#dc2626}
+input{width:100%;border:1px solid #ccc;border-radius:8px;padding:8px 12px;font-size:14px;font-family:inherit;background:white;color:#1a1a1a;outline:none}
+input:focus{border-color:#888}
+.dot{width:7px;height:7px;border-radius:50%;background:#888;display:inline-block;animation:pu 0.8s ease-in-out infinite}
+.dot:nth-child(2){animation-delay:.15s}.dot:nth-child(3){animation-delay:.3s}
+@keyframes pu{0%,100%{opacity:1}50%{opacity:0.2}}
+.bl{animation:pu 0.9s ease-in-out infinite}
+.ocean{fill:#B5D4F4}.land{fill:#C0DD97;stroke:rgba(255,255,255,0.8);stroke-width:0.5;transition:fill .3s}
+.land.dim{fill:#D3D1C7}.land.hi{fill:#639922;stroke:#3B6D11;stroke-width:1}
+#msv{width:100%;display:block;border-radius:8px;border:1px solid #e5e5e5;cursor:grab;margin-bottom:10px}
+#msv:active{cursor:grabbing}
+@media(prefers-color-scheme:dark){
+  body{background:#111;color:#f0f0f0}
+  .card{background:#1e1e1e;border-color:#333}
+  .btn{background:#1e1e1e;border-color:#444;color:#f0f0f0}.btn:hover{background:#2a2a2a}
+  .pbtn{background:#f0f0f0;color:#111}.pbtn:hover{background:#ddd}
+  input{background:#1e1e1e;border-color:#444;color:#f0f0f0}
+  .ocean{fill:#0C447C}.land{fill:#27500A}.land.dim{fill:#444441}
+  #msv{border-color:#333}
+  .lbl{color:#666}.ok{color:#4ade80}.no{color:#f87171}
+}
+</style>
+</head>
+<body>
+<div id="app">
+  <div style="text-align:center;padding:3rem 1rem">
+    <div style="display:flex;justify-content:center;gap:6px;margin-bottom:10px"><div class="dot"></div><div class="dot"></div><div class="dot"></div></div>
+    <span style="color:#888">Loading world map...</span>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.8.5/d3.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/topojson/3.0.2/topojson.min.js"></script>
+<script>
+const DATA=[
+[840,"United States","Washington D.C.",38.9,-77,["usa","us","america"],["washington","washington dc"]],
+[124,"Canada","Ottawa",45.4,-75.7,null,null],[484,"Mexico","Mexico City",19.4,-99.1,null,null],
+[76,"Brazil","Brasília",-15.8,-47.9,null,["brasilia"]],[32,"Argentina","Buenos Aires",-34.6,-58.4,null,null],
+[170,"Colombia","Bogotá",4.7,-74.1,null,["bogota"]],[604,"Peru","Lima",-12,-77,null,null],
+[862,"Venezuela","Caracas",10.5,-66.9,null,null],[152,"Chile","Santiago",-33.5,-70.7,null,null],
+[218,"Ecuador","Quito",-0.2,-78.5,null,null],[68,"Bolivia","Sucre",-19,-65.3,null,null],
+[600,"Paraguay","Asunción",-25.3,-57.6,null,["asuncion"]],[858,"Uruguay","Montevideo",-34.9,-56.2,null,null],
+[192,"Cuba","Havana",23.1,-82.4,null,null],[332,"Haiti","Port-au-Prince",18.5,-72.3,null,null],
+[214,"Dominican Republic","Santo Domingo",18.5,-69.9,null,null],[320,"Guatemala","Guatemala City",14.6,-90.5,null,null],
+[340,"Honduras","Tegucigalpa",14.1,-87.2,null,null],[188,"Costa Rica","San José",9.9,-84.1,null,["san jose"]],
+[591,"Panama","Panama City",8.9,-79.5,null,null],[222,"El Salvador","San Salvador",13.7,-89.2,null,null],
+[558,"Nicaragua","Managua",12.1,-86.3,null,null],
+[826,"United Kingdom","London",51.5,-0.1,["uk","england","great britain","britain"],null],
+[250,"France","Paris",48.9,2.3,null,null],[276,"Germany","Berlin",52.5,13.4,null,null],
+[380,"Italy","Rome",41.9,12.5,null,null],[724,"Spain","Madrid",40.4,-3.7,null,null],
+[620,"Portugal","Lisbon",38.7,-9.1,null,null],[528,"Netherlands","Amsterdam",52.4,4.9,null,null],
+[56,"Belgium","Brussels",50.8,4.4,null,null],[756,"Switzerland","Bern",46.9,7.4,null,null],
+[40,"Austria","Vienna",48.2,16.4,null,null],[616,"Poland","Warsaw",52.2,21,null,null],
+[752,"Sweden","Stockholm",59.3,18.1,null,null],[578,"Norway","Oslo",59.9,10.7,null,null],
+[208,"Denmark","Copenhagen",55.7,12.6,null,null],[246,"Finland","Helsinki",60.2,25,null,null],
+[300,"Greece","Athens",37.9,23.7,null,null],[642,"Romania","Bucharest",44.4,26.1,null,null],
+[100,"Bulgaria","Sofia",42.7,23.3,null,null],[191,"Croatia","Zagreb",45.8,16,null,null],
+[203,"Czechia","Prague",50.1,14.4,["czech republic"],null],[348,"Hungary","Budapest",47.5,19.1,null,null],
+[372,"Ireland","Dublin",53.3,-6.3,null,null],[804,"Ukraine","Kyiv",50.5,30.5,null,["kiev"]],
+[703,"Slovakia","Bratislava",48.1,17.1,null,null],[8,"Albania","Tirana",41.3,19.8,null,null],
+[643,"Russia","Moscow",55.8,37.6,null,null],[498,"Moldova","Chișinău",47,28.8,null,["chisinau"]],
+[112,"Belarus","Minsk",53.9,27.6,null,null],[688,"Serbia","Belgrade",44.8,20.5,null,null],
+[156,"China","Beijing",39.9,116.4,null,null],[392,"Japan","Tokyo",35.7,139.7,null,null],
+[356,"India","New Delhi",28.6,77.2,null,["delhi"]],[410,"South Korea","Seoul",37.6,127,["korea"],null],
+[360,"Indonesia","Jakarta",-6.2,106.8,null,null],[608,"Philippines","Manila",14.6,121,null,null],
+[704,"Vietnam","Hanoi",21,105.8,null,null],[764,"Thailand","Bangkok",13.8,100.5,null,null],
+[458,"Malaysia","Kuala Lumpur",3.2,101.7,null,["kl"]],[586,"Pakistan","Islamabad",33.7,73.1,null,null],
+[50,"Bangladesh","Dhaka",23.7,90.4,null,null],[524,"Nepal","Kathmandu",27.7,85.3,null,null],
+[144,"Sri Lanka","Colombo",6.9,79.9,null,null],[682,"Saudi Arabia","Riyadh",24.7,46.7,null,null],
+[792,"Turkey","Ankara",39.9,32.9,null,null],[364,"Iran","Tehran",35.7,51.4,null,null],
+[368,"Iraq","Baghdad",33.3,44.4,null,null],[400,"Jordan","Amman",31.9,35.9,null,null],
+[376,"Israel","Jerusalem",31.8,35.2,null,["tel aviv"]],[422,"Lebanon","Beirut",33.9,35.5,null,null],
+[760,"Syria","Damascus",33.5,36.3,null,null],
+[784,"United Arab Emirates","Abu Dhabi",24.5,54.4,["uae","emirates"],null],
+[634,"Qatar","Doha",25.3,51.5,null,null],[398,"Kazakhstan","Astana",51.2,71.4,null,["nur-sultan","nursultan"]],
+[860,"Uzbekistan","Tashkent",41.3,69.3,null,null],[116,"Cambodia","Phnom Penh",11.6,104.9,null,null],
+[418,"Laos","Vientiane",17.9,102.6,null,null],[104,"Myanmar","Naypyidaw",19.8,96.2,["burma"],null],
+[4,"Afghanistan","Kabul",34.5,69.2,null,null],[496,"Mongolia","Ulaanbaatar",47.9,106.9,null,null],
+[408,"North Korea","Pyongyang",39,125.8,null,null],[818,"Egypt","Cairo",30.1,31.2,null,null],
+[566,"Nigeria","Abuja",9.1,7.5,null,null],[710,"South Africa","Pretoria",-25.7,28.2,null,["cape town","tshwane"]],
+[404,"Kenya","Nairobi",-1.3,36.8,null,null],[231,"Ethiopia","Addis Ababa",9,38.7,null,null],
+[12,"Algeria","Algiers",36.7,3.1,null,null],[504,"Morocco","Rabat",34,-6.8,null,null],
+[288,"Ghana","Accra",5.6,-0.2,null,null],[800,"Uganda","Kampala",0.3,32.6,null,null],
+[686,"Senegal","Dakar",14.7,-17.4,null,null],[516,"Namibia","Windhoek",-22.6,17.1,null,null],
+[508,"Mozambique","Maputo",-25.9,32.6,null,null],[24,"Angola","Luanda",-8.8,13.2,null,null],
+[729,"Sudan","Khartoum",15.6,32.5,null,null],[434,"Libya","Tripoli",32.9,13.2,null,null],
+[894,"Zambia","Lusaka",-15.4,28.3,null,null],[716,"Zimbabwe","Harare",-17.8,31.1,null,null],
+[466,"Mali","Bamako",12.7,-8,null,null],
+[180,"DR Congo","Kinshasa",-4.3,15.3,["democratic republic of congo","drc","congo"],null],
+[120,"Cameroon","Yaoundé",3.9,11.5,null,["yaounde"]],
+[36,"Australia","Canberra",-35.3,149.1,null,null],[554,"New Zealand","Wellington",-41.3,174.8,null,null]
+];
+
+const STORE_KEY='wq_scores';
+const fm={};
+let V,G,PJ,PF,ZB,MW,MH=300;
+let phase='loading',rnd=0,sc=0,picks=[],cur=null,hs=[];
+
+function norm(s){return(s||'').toLowerCase().trim().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9 ]/g,'').replace(/\s+/g,' ');}
+function lev(a,b){const m=a.length,n=b.length,dp=Array.from({length:m+1},(_,i)=>Array.from({length:n+1},(_,j)=>i?j?0:i:j));for(let i=1;i<=m;i++)for(let j=1;j<=n;j++)dp[i][j]=a[i-1]===b[j-1]?dp[i-1][j-1]:1+Math.min(dp[i-1][j],dp[i][j-1],dp[i-1][j-1]);return dp[m][n];}
+function fuzzy(inp,target){const a=norm(inp),b=norm(target);if(!a)return false;return lev(a,b)<=(b.length<=5?1:2);}
+function chk(inp,correct,al){const ni=norm(inp),nc=norm(correct);if(!ni)return false;if(ni===nc)return true;if((al||[]).map(norm).some(a=>a===ni))return true;return fuzzy(inp,correct)||(al||[]).some(a=>fuzzy(inp,a));}
+function wasTypo(inp,correct,al){return!(norm(inp)===norm(correct)||(al||[]).map(norm).some(a=>a===norm(inp)));}
+
+function loadHs(){try{hs=JSON.parse(localStorage.getItem(STORE_KEY)||'[]');}catch{hs=[];}}
+function saveHs(){try{localStorage.setItem(STORE_KEY,JSON.stringify(hs));}catch{}}
+function addHs(name,s){hs.push({n:name,s,d:new Date().toLocaleDateString()});hs.sort((a,b)=>b.s-a.s);hs=hs.slice(0,10);saveHs();}
+
+function render(){
+  const app=document.getElementById('app');
+  if(phase==='welcome')app.innerHTML=wHTML();
+  else if(phase==='game'){app.innerHTML=gHTML();setupMap();hiLight();showInput();}
+  else if(phase==='over')app.innerHTML=oHTML();
+}
+
+function setupMap(){
+  const el=document.getElementById('ma');MW=el.offsetWidth||600;
+  PJ=d3.geoNaturalEarth1().scale(MW/6.3).translate([MW/2,MH/2]);
+  PF=d3.geoPath().projection(PJ);
+  V=d3.select('#ma').append('svg').attr('id','msv').attr('viewBox',`0 0 ${MW} ${MH}`);
+  V.append('rect').attr('width',MW).attr('height',MH).attr('class','ocean');
+  G=V.append('g');
+  G.selectAll('path').data(Object.values(fm)).join('path').attr('class','land dim').attr('d',PF);
+  ZB=d3.zoom().scaleExtent([1,20]).on('zoom',e=>G.attr('transform',e.transform));
+  V.call(ZB);
+}
+
+function hiLight(){
+  G.selectAll('path').attr('class',d=>+d.id===cur.id?'land hi bl':'land dim');
+  zoomTo(fm[cur.id]);
+}
+
+function zoomTo(feat){
+  try{
+    const[[x0,y0],[x1,y1]]=PF.bounds(feat);
+    const dx=x1-x0,dy=y1-y0;
+    if(!isFinite(dx)||dx<1||dy<1)return;
+    const s=Math.max(1,Math.min(14,0.78/Math.max(dx/MW,dy/MH)));
+    V.transition().duration(750).call(ZB.transform,d3.zoomIdentity.translate(MW/2-s*(x0+x1)/2,MH/2-s*(y0+y1)/2).scale(s));
+  }catch{}
+}
+
+function startGame(){
+  const av=DATA.filter(d=>fm[d[0]]);
+  picks=[...av].sort(()=>Math.random()-0.5).slice(0,10).map(d=>({id:d[0],name:d[1],capital:d[2],clat:d[3],clng:d[4],na:d[5],ca:d[6]}));
+  rnd=1;sc=0;cur=picks[0];phase='game';render();
+}
+
+function submit(){
+  const cv=document.getElementById('ci')?.value||'',kv=document.getElementById('ki')?.value||'';
+  const cok=chk(cv,cur.name,cur.na),kok=chk(kv,cur.capital,cur.ca);
+  sc+=(cok?1:0)+(kok?1:0);
+  document.getElementById('sc-el').textContent=`Score: ${sc}/20`;
+  G.selectAll('path.hi').classed('bl',false);
+  document.getElementById('gui').innerHTML=resHTML(cok,kok,cv,kv);
+}
+
+function nxtRnd(){
+  if(rnd>=10){phase='over';render();return;}
+  rnd++;cur=picks[rnd-1];phase='game';render();
+}
+
+function saveScore(){
+  const nm=document.getElementById('ni')?.value?.trim();
+  if(!nm)return;
+  addHs(nm,sc);render();
+}
+
+function hsHTML(){
+  if(!hs.length)return`<div style="text-align:center;color:#999;padding:1rem;font-size:13px">No scores yet — be the first!</div>`;
+  return hs.map((h,i)=>`<div style="display:flex;justify-content:space-between;padding:7px 0;border-bottom:1px solid #f0f0f0;font-size:13px"><span>${i+1}. ${h.n} <span style="color:#bbb;font-size:11px">${h.d}</span></span><span style="font-weight:500">${h.s}/20</span></div>`).join('');
+}
+
+function wHTML(){return`
+  <div style="text-align:center;padding:2rem 0 1.5rem">
+    <h1 style="font-size:28px;font-weight:600;margin-bottom:6px">World Capitals Quiz</h1>
+    <p style="color:#888;font-size:14px;margin-bottom:4px">10 rounds &middot; name the country &amp; its capital &middot; 20 points max</p>
+    <p style="color:#bbb;font-size:12px;margin-bottom:1.5rem">Minor spelling mistakes are forgiven</p>
+    <button class="btn pbtn" onclick="startGame()" style="padding:12px 40px;font-size:16px">Start Game</button>
+  </div>
+  <div class="lbl" style="margin-bottom:8px">High Scores</div>
+  <div class="card" style="padding:0 1rem">${hsHTML()}</div>`;}
+
+function gHTML(){
+  const dots=Array.from({length:10},(_,i)=>`<span style="display:inline-block;width:9px;height:9px;border-radius:50%;margin:0 2px;background:${i<rnd?'#1a1a1a':'#ddd'}"></span>`).join('');
+  return`<div>
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+      <div style="font-size:13px;color:#888">Round ${rnd}/10 &nbsp;${dots}</div>
+      <div id="sc-el" style="font-size:13px;font-weight:600">Score: ${sc}/20</div>
+    </div>
+    <div id="ma" style="margin-bottom:4px"></div>
+    <div style="font-size:11px;color:#bbb;text-align:right;margin-bottom:10px">Drag to pan &middot; scroll to zoom</div>
+    <div id="gui"></div>
+  </div>`;}
+
+function showInput(){
+  document.getElementById('gui').innerHTML=`
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px">
+      <div><div class="lbl" style="margin-bottom:6px">Country name</div><input id="ci" type="text" placeholder="Type country name..." autocomplete="off"/></div>
+      <div><div class="lbl" style="margin-bottom:6px">Capital city</div><input id="ki" type="text" placeholder="Type capital city..." autocomplete="off"/></div>
+    </div>
+    <button class="btn pbtn" onclick="submit()" style="width:100%;padding:10px">Submit Answer</button>`;
+  const ci=document.getElementById('ci'),ki=document.getElementById('ki');
+  ci.focus();
+  ci.onkeydown=e=>{if(e.key==='Enter'||e.key==='Tab'){e.preventDefault();ki.focus();}};
+  ki.onkeydown=e=>{if(e.key==='Enter')submit();};
+}
+
+function resHTML(cok,kok,cv,kv){
+  const pts=(cok?1:0)+(kok?1:0);
+  const typoC=cok&&cv&&wasTypo(cv,cur.name,cur.na),typoK=kok&&kv&&wasTypo(kv,cur.capital,cur.ca);
+  return`<div class="card" style="margin-bottom:10px">
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:10px">
+      <div>
+        <div class="lbl" style="margin-bottom:4px">Country</div>
+        <div class="${cok?'ok':'no'}" style="font-weight:600;font-size:15px">${cok?'&#10003;':'&#10007;'} ${cur.name}</div>
+        ${typoC?`<div style="font-size:11px;color:#d97706;margin-top:2px">Typo forgiven!</div>`:''}
+        ${!cok&&cv?`<div style="font-size:12px;color:#999;margin-top:2px">You wrote: ${cv}</div>`:''}
+      </div>
+      <div>
+        <div class="lbl" style="margin-bottom:4px">Capital</div>
+        <div class="${kok?'ok':'no'}" style="font-weight:600;font-size:15px">${kok?'&#10003;':'&#10007;'} ${cur.capital}</div>
+        ${typoK?`<div style="font-size:11px;color:#d97706;margin-top:2px">Typo forgiven!</div>`:''}
+        ${!kok&&kv?`<div style="font-size:12px;color:#999;margin-top:2px">You wrote: ${kv}</div>`:''}
+      </div>
+    </div>
+    <div style="font-size:13px;color:#888">+${pts} point${pts!==1?'s':''} &middot; Running total: ${sc}/20</div>
+  </div>
+  <button class="btn pbtn" onclick="nxtRnd()" style="width:100%;padding:10px">${rnd<10?'Next Country &#8594;':'See Final Score'}</button>`;}
+
+function oHTML(){
+  const g=sc>=18?'Outstanding!':sc>=14?'Great job!':sc>=10?'Good effort!':'Keep learning!';
+  return`<div>
+    <div style="text-align:center;padding:2rem 0 1.5rem">
+      <div style="font-size:64px;font-weight:700;line-height:1">${sc}</div>
+      <div style="color:#888;margin-top:6px;font-size:16px">out of 20 &middot; ${g}</div>
+    </div>
+    <div style="margin-bottom:1rem">
+      <div class="lbl" style="margin-bottom:8px">Save your score</div>
+      <div style="display:flex;gap:8px"><input id="ni" type="text" placeholder="Your name..." style="flex:1"/><button class="btn" onclick="saveScore()">Save</button></div>
+    </div>
+    <button class="btn pbtn" onclick="startGame()" style="width:100%;padding:10px;margin-bottom:1.5rem">Play Again</button>
+    <div class="lbl" style="margin-bottom:8px">High Scores</div>
+    <div class="card" style="padding:0 1rem">${hsHTML()}</div>
+  </div>`;}
+
+async function init(){
+  loadHs();
+  try{
+    const topo=await fetch('https://cdn.jsdelivr.net/npm/world-atlas@2/countries-110m.json').then(r=>{if(!r.ok)throw new Error('HTTP '+r.status);return r.json();});
+    topojson.feature(topo,topo.objects.countries).features.forEach(f=>fm[+f.id]=f);
+    phase='welcome';
+  }catch(e){
+    document.getElementById('app').innerHTML=`<div style="color:#dc2626;padding:2rem;text-align:center">Failed to load world map. Check your internet connection and refresh.<br><small style="color:#999">${e.message}</small></div>`;
+    return;
+  }
+  render();
+}
+init();
+</script>
+</body>
+</html>
